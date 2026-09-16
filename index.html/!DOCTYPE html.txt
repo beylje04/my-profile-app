@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pengurusan Profil Peribadi</title>
+  <!-- Telegram Web App SDK -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    :root {
+      --bg-color: #0f172a;
+      --card-bg: #1e293b;
+      --accent-color: #38bdf8;
+      --text-color: #f8fafc;
+      --error-color: #ef4444;
+    }
+
+    body {
+      margin: 0;
+      padding: 16px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+    }
+
+    .hidden { display: none !important; }
+
+    /* Skrin Sekatan Akses */
+    .access-denied {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 80vh;
+      text-align: center;
+    }
+
+    .access-denied h2 {
+      color: var(--error-color);
+      margin-top: 8px;
+    }
+
+    /* Container Aplikasi */
+    .app-container {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .header {
+      text-align: center;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #334155;
+      margin-bottom: 16px;
+    }
+
+    .header h1 {
+      font-size: 1.3rem;
+      margin: 0;
+      color: var(--accent-color);
+    }
+
+    .card {
+      background-color: var(--card-bg);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 16px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+
+    .btn {
+      width: 100%;
+      background-color: var(--accent-color);
+      color: #0f172a;
+      border: none;
+      padding: 12px;
+      border-radius: 8px;
+      font-weight: bold;
+      font-size: 1rem;
+      cursor: pointer;
+      margin-top: 8px;
+    }
+
+    .btn:active {
+      opacity: 0.8;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 1. SKRIN AKSES DITOLAK (JIKA BUKAN KAU) -->
+  <div id="access-denied" class="access-denied hidden">
+    <div style="font-size: 48px;">🔒</div>
+    <h2>Akses Ditolak</h2>
+    <p>Aplikasi ini adalah peribadi dan hanya boleh diakses oleh pemilik sahaja.</p>
+  </div>
+
+  <!-- 2. KANDUNGAN UTAMA APLIKASI (PRIVATE) -->
+  <div id="app-content" class="app-container hidden">
+    <div class="header">
+      <h1>✨ Dashboard Profil Peribadi</h1>
+      <p style="font-size: 0.85rem; color: #94a3b8; margin-top: 4px;">Mod Sokongan Telegram Mini App</p>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-top:0;">👤 Maklumat Pentadbir</h3>
+      <p id="user-info">Memuat naik maklumat...</p>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-top:0;">⚡ Tindakan Pantas</h3>
+      <button class="btn" onclick="sendAction('tambah')">➕ Tambah Profil Baharu</button>
+      <button class="btn" style="background-color: #cbd5e1;" onclick="sendAction('lihat')">📋 Lihat Semua Profil</button>
+    </div>
+  </div>
+
+  <script>
+    // ⚠️ TUKAR ID INI KEPADA TELEGRAM USER ID KAU
+    const MY_TELEGRAM_ID = 8126846543;
+
+    const tg = window.Telegram.WebApp;
+    tg.ready();
+    tg.expand(); // Buka aplikasi dalam mod skrin penuh
+
+    const user = tg.initDataUnsafe?.user;
+
+    // SEMAKAN KESELAMATAN (USER ID CHECK)
+    if (user && user.id === MY_TELEGRAM_ID) {
+      document.getElementById('app-content').classList.remove('hidden');
+      document.getElementById('user-info').innerText = `Selamat datang, ${user.first_name}! (ID: ${user.id})`;
+    } else {
+      document.getElementById('access-denied').classList.remove('hidden');
+    }
+
+    // Fungsi untuk berinteraksi semula dengan Bot Telegram
+    function sendAction(action) {
+      if (action === 'tambah') {
+        tg.sendData("ACTION_TAMBAH_PROFIL");
+      } else if (action === 'lihat') {
+        tg.sendData("ACTION_LIHAT_PROFIL");
+      }
+      tg.close(); // Tutup Mini App selepas tindakan dipicu
+    }
+  </script>
+</body>
+</html>
