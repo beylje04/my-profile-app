@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Private Management System</title>
+  <title>Private Profile System</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
     :root {
       --bg-color: #0f172a;
@@ -23,7 +24,6 @@
 
     .hidden { display: none !important; }
 
-    /* PIN Login Screen */
     .login-container {
       display: flex;
       flex-direction: column;
@@ -55,7 +55,6 @@
       letter-spacing: 4px;
     }
 
-    /* Main Dashboard Layout */
     .app-container {
       max-width: 600px;
       margin: 0 auto;
@@ -95,11 +94,27 @@
     }
 
     .btn:active { opacity: 0.8; }
+    
+    .status-toast {
+      margin-top: 12px;
+      padding: 10px;
+      background-color: #334155;
+      border-radius: 6px;
+      color: #38bdf8;
+      font-size: 0.9rem;
+      text-align: center;
+    }
+
+    .profile-item {
+      border-bottom: 1px solid #334155;
+      padding: 8px 0;
+    }
+    .profile-item:last-child { border-bottom: none; }
   </style>
 </head>
 <body>
 
-  <!-- 1. PIN LOGIN SCREEN -->
+  <!-- LOGIN SCREEN (UNTUK CHROME) -->
   <div id="login-screen" class="login-container">
     <div class="login-box">
       <div style="font-size: 40px;">🔐</div>
@@ -112,32 +127,38 @@
     </div>
   </div>
 
-  <!-- 2. MAIN DASHBOARD CONTENT -->
+  <!-- MAIN DASHBOARD -->
   <div id="app-content" class="app-container hidden">
     <div class="header">
       <h1>✨ Personal Dashboard</h1>
-      <p style="font-size: 0.85rem; color: #94a3b8; margin-top: 4px;">Direct Web Mode (Chrome Ready)</p>
     </div>
 
     <div class="card">
-      <h3 style="margin-top:0;">👤 Access Status</h3>
-      <p>Logged in successfully. Welcome back!</p>
+      <h3 style="margin-top:0;">📋 Profiles List</h3>
+      <div id="profiles-container">
+        <p style="color: #94a3b8; font-size: 0.9rem;">Loading profiles data...</p>
+      </div>
     </div>
 
     <div class="card">
-      <h3 style="margin-top:0;">⚡ Quick Actions</h3>
-      <button class="btn" onclick="handleAction('Add Profile')">➕ Add New Profile</button>
-      <button class="btn" style="background-color: #cbd5e1; margin-top: 8px;" onclick="handleAction('View Profiles')">📋 View All Profiles</button>
+      <h3 style="margin-top:0;">⚡ Actions</h3>
+      <button class="btn" onclick="triggerAction('ACTION_ADD_PROFILE')">➕ Add Profile</button>
+      <button class="btn" style="background-color: #cbd5e1; margin-top: 8px;" onclick="loadProfiles()">🔄 Refresh Data</button>
       <button class="btn" style="background-color: #ef4444; color: white; margin-top: 16px;" onclick="logout()">🚪 Logout</button>
+      
+      <div id="status-toast" class="status-toast hidden"></div>
     </div>
   </div>
 
   <script>
-    // ⚠️ CHANGE YOUR PIN HERE
-    const MY_PASSWORD = "041228"; // Replace "1234" with your custom password/PIN
+    const MY_PASSWORD = "1234"; // ⚠️ Tukar PIN korang di sini
 
-    // Check existing login session in Chrome
-    if (localStorage.getItem("is_logged_in") === "true") {
+    const tg = window.Telegram?.WebApp;
+    if (tg) tg.ready();
+
+    if (tg && tg.initDataUnsafe?.user) {
+      showApp();
+    } else if (localStorage.getItem("is_logged_in") === "true") {
       showApp();
     }
 
@@ -154,11 +175,50 @@
     function showApp() {
       document.getElementById("login-screen").classList.add("hidden");
       document.getElementById("app-content").classList.remove("hidden");
+      loadProfiles();
     }
 
-    function handleAction(actionName) {
-      alert(`Triggered: ${actionName}`);
-      // App will stay open after clicking buttons
+    function loadProfiles() {
+      fetch('profiles.json')
+        .then(response => {
+          if (!response.ok) throw new Error("No data file found");
+          return response.json();
+        })
+        .then(data => {
+          const container = document.getElementById('profiles-container');
+          container.innerHTML = '';
+          
+          if (Object.keys(data).length === 0) {
+            container.innerHTML = '<p style="color: #94a3b8;">No profiles available.</p>';
+            return;
+          }
+
+          for (const [key, profile] of Object.entries(data)) {
+            const item = document.createElement('div');
+            item.className = 'profile-item';
+            item.innerHTML = `<strong>${key}</strong><br><small style="color:#94a3b8;">Tarikh Lahir: ${profile.dob || 'N/A'} | Nota: ${profile.notes || '-'}</small>`;
+            container.appendChild(item);
+          }
+        })
+        .catch(err => {
+          document.getElementById('profiles-container').innerHTML = '<p style="color: #94a3b8;">Tiada data profiles.json lagi di GitHub.</p>';
+        });
+    }
+
+    function triggerAction(actionText) {
+      if (tg && tg.initData) {
+        tg.sendData(actionText);
+        showToast(`Command sent to bot!`);
+      } else {
+        showToast(`Action triggered`);
+      }
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById("status-toast");
+      toast.innerText = msg;
+      toast.classList.remove("hidden");
+      setTimeout(() => { toast.classList.add("hidden"); }, 3000);
     }
 
     function logout() {
